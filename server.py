@@ -1,6 +1,6 @@
 #  coding: utf-8 
 import socketserver
-
+import os
 # Copyright 2013 Abram Hindle, Eddie Antonio Santos
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,10 +30,47 @@ import socketserver
 class MyWebServer(socketserver.BaseRequestHandler):
     
     def handle(self):
-        self.data = self.request.recv(1024).strip()
+        self.data = self.request.recv(1024).strip().decode('utf-8')
         print ("Got a request of: %s\n" % self.data)
-        self.request.sendall(bytearray("OK",'utf-8'))
+        method, url, version = self.parse(self.data)
+        response = ''
+        if method != 'GET':
+            response = self.combine('405 Method Not Allowed')
+        else:
+            dire = os.getcwd()
+            path = dire + '/www' + url
+            secur = False
+            if os.path.realpath(path).startswith(dire):
+                secur = True
+            if os.path.isfile(path) and secur:
+                root_ext = os.path.splitext(path)
+                if root_ext[1] == '.html' or root_ext[1] == '.css' :
+                    size = open(path).read()
+                    if root_ext[1] == '.html':
+                        response = self.combine(body=size)
+                    else:
+                        response = self.combine(t='text/css',body=size)
+            elif os.path.isdir(path) and secur:
+                newPath = path + '/index.html'
+                if os.path.isfile(newPath):
+                    if url[-1] == '/':
+                        size = open(newPath).read()
+                        response = self.combine(body=size)
+                    else:
+                        redirect = 'http://localhost:8080' + url
+                        response = self.combine('301 Moved Permanently',redirect)
+            else:
+                response = self.combine('404 Not Found')
+        self.request.sendall(response.encode())
 
+    def parse(self,data):
+        lines = data.splitlines()
+        return lines[0].split()
+    
+    def combine(self,status='200 OK',t='text/html',body=''):
+        response = 'HTTP/1.1 ' + status + '\n' + 'Content-Type: ' + t + '\n' + body
+        return response
+   
 if __name__ == "__main__":
     HOST, PORT = "localhost", 8080
 
@@ -43,4 +80,4 @@ if __name__ == "__main__":
 
     # Activate the server; this will keep running until you
     # interrupt the program with Ctrl-C
-    server.serve_forever()
+    server.serve_forever()			
