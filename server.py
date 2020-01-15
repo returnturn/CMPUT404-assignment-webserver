@@ -61,7 +61,7 @@ class MyWebServer(socketserver.BaseRequestHandler):
         return lines[0].split()
     
     def combine(self,status='200 OK',t='text/html',body=''):
-        response = 'HTTP/1.1 ' + status + '\n' + 'Content-Type: ' + t + '\n' + body
+        response = 'HTTP/1.1 ' + status + '\n' + 'Content-Type: ' + t + '\n\n' + body
         return response
     
 if __name__ == "__main__":
