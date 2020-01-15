@@ -37,30 +37,24 @@ class MyWebServer(socketserver.BaseRequestHandler):
         if method != 'GET':
             response = self.combine('405 Method Not Allowed')
         else:
+            response = self.combine('404 Not Found')
             dire = os.getcwd()
             path = dire + '/www' + url
-            secur = False
             if os.path.realpath(path).startswith(dire):
-                secur = True
-            if os.path.isfile(path) and secur:
-                root_ext = os.path.splitext(path)
-                if root_ext[1] == '.html' or root_ext[1] == '.css' :
-                    size = open(path).read()
-                    if root_ext[1] == '.html':
-                        response = self.combine(body=size)
-                    else:
-                        response = self.combine(t='text/css',body=size)
-            elif os.path.isdir(path) and secur:
-                newPath = path + '/index.html'
-                if os.path.isfile(newPath):
-                    if url[-1] == '/':
+                if os.path.isfile(path):
+                    if url[-1] == 'l' or url[-1] == 's' :
+                        size = open(path).read()
+                        if url[-1] == 'l':
+                            response = self.combine(body=size)
+                        else:
+                            response = self.combine(t='text/css',body=size)
+                elif os.path.isdir(path):
+                    newPath = path + '/index.html'
+                    if url[-1] != '/':
+                        response = 'HTTP/1.1 301 Moved Permanently\n' + 'Location: ' + url + '/\n'
+                    elif os.path.isfile(newPath) and url[-1] == '/':
                         size = open(newPath).read()
                         response = self.combine(body=size)
-                    else:
-                        redirect = 'http://localhost:8080' + url
-                        response = self.combine('301 Moved Permanently',redirect)
-            else:
-                response = self.combine('404 Not Found')
         self.request.sendall(response.encode())
 
     def parse(self,data):
@@ -70,7 +64,7 @@ class MyWebServer(socketserver.BaseRequestHandler):
     def combine(self,status='200 OK',t='text/html',body=''):
         response = 'HTTP/1.1 ' + status + '\n' + 'Content-Type: ' + t + '\n' + body
         return response
-   
+    
 if __name__ == "__main__":
     HOST, PORT = "localhost", 8080
 
