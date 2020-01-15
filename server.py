@@ -42,12 +42,11 @@ class MyWebServer(socketserver.BaseRequestHandler):
             path = dire + '/www' + url
             if os.path.realpath(path).startswith(dire):
                 if os.path.isfile(path):
-                    if url[-1] == 'l' or url[-1] == 's' :
-                        size = open(path).read()
-                        if url[-1] == 'l':
-                            response = self.combine(body=size)
-                        else:
-                            response = self.combine(t='text/css',body=size)
+                    size = open(path).read()        
+                    if url[-1] == 'l':
+                        response = self.combine(body=size)
+                    elif url[-1] == 's':
+                        response = self.combine(t='text/css',body=size)
                 elif os.path.isdir(path):
                     newPath = path + '/index.html'
                     if url[-1] != '/':
