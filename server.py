@@ -33,35 +33,36 @@ class MyWebServer(socketserver.BaseRequestHandler):
         self.data = self.request.recv(1024).strip().decode('utf-8')
         print ("Got a request of: %s\n" % self.data)
         method, url, version = self.parse(self.data)
-        response = ''
+        response = self.combine('404 Not Found',t='text/plain')
         if method != 'GET':
-            response = self.combine('405 Method Not Allowed')
+            response = self.combine('405 Method Not Allowed',t='text/plain')
         else:
-            response = self.combine('404 Not Found')
             dire = os.getcwd()
             path = dire + '/www' + url
             if os.path.realpath(path).startswith(dire):
                 if os.path.isfile(path):
-                    size = open(path).read()        
+                    c = open(path).read()
+                    l=len(c)
                     if url[-1] == 'l':
-                        response = self.combine(body=size)
+                        response = self.combine(body=c,l=l)
                     elif url[-1] == 's':
-                        response = self.combine(t='text/css',body=size)
+                        response = self.combine(t='text/css',body=c,l=l)
                 elif os.path.isdir(path):
                     newPath = path + '/index.html'
                     if url[-1] != '/':
-                        response = 'HTTP/1.1 301 Moved Permanently\n' + 'Location: ' + url + '/\n'
+                        response = 'HTTP/1.1 301 Moved Permanently\n' + 'Content-Type: text/plain\n' + 'Content-Length: 0\n'+'Location: ' + url + '/\n'
                     elif os.path.isfile(newPath) and url[-1] == '/':
-                        size = open(newPath).read()
-                        response = self.combine(body=size)
+                        c = open(newPath).read()
+                        l=len(c)
+                        response = self.combine(body=c,l=l)
         self.request.sendall(response.encode())
 
     def parse(self,data):
         lines = data.splitlines()
         return lines[0].split()
     
-    def combine(self,status='200 OK',t='text/html',body=''):
-        response = 'HTTP/1.1 ' + status + '\n' + 'Content-Type: ' + t + '\n\n' + body
+    def combine(self,status='200 OK',t='text/html',l=0,body=''):
+        response = 'HTTP/1.1 ' + status + '\n' + 'Content-Type: ' + t + '\n' + 'Content-Length: ' + str(l) + '\n\n' + body
         return response
     
 if __name__ == "__main__":
